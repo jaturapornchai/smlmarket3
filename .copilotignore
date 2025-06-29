@@ -1,0 +1,25 @@
+# GitHub Copilot Ignore File
+# This file specifies patterns of files that GitHub Copilot should ignore
+# ไฟล์นี้กำหนดรูปแบบของไฟล์ที่ GitHub Copilot ควรละเว้น
+
+# Ignore all files in .pr directory
+# ละเว้นไฟล์ทั้งหมดในไดเรกทอรี .pr
+.pr/
+.pr/*
+.pr/**/*
+
+# Ignore specific VS Code configuration files
+# ละเว้นไฟล์การตั้งค่า VS Code เฉพาะ
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# Ignore sensitive or configuration files
+# ละเว้นไฟล์ที่มีความสำคัญหรือการตั้งค่า
+*.env
+*.env.local
+*.env.production
+*.key
+*.pem
+*.p12
+*.keystore
