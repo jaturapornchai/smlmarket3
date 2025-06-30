@@ -1,0 +1,18 @@
+{
+    "cmake.sourceDirectory": "C:/gif/smlmarket3/windows",
+    "github.copilot.enable": {
+        "*": true,
+        ".pr": false,
+        ".pr/*": false,
+        ".pr/**": false
+    },
+    "files.exclude": {
+        ".pr": false
+    },
+    "search.exclude": {
+        ".pr": false
+    },
+    "files.watcherExclude": {
+        ".pr/**": false
+    }
+}

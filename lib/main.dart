@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'screens/search/search_screen.dart';
+import 'data/api_service.dart';
+import 'config/global.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,11 +15,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SML Market',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'SML Market - Home'),
+      home: const SearchScreen(),
     );
   }
 }
@@ -31,30 +36,40 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
-
-  final List<Product> _products = [
-    Product('Laptop', 'High-performance laptop', 999.99, Icons.laptop),
-    Product(
-      'Smartphone',
-      'Latest smartphone model',
-      699.99,
-      Icons.phone_android,
-    ),
-    Product(
-      'Headphones',
-      'Wireless noise-canceling headphones',
-      199.99,
-      Icons.headphones,
-    ),
-    Product('Tablet', '10-inch tablet with stylus', 449.99, Icons.tablet),
-    Product('Smart Watch', 'Fitness tracking smartwatch', 299.99, Icons.watch),
-    Product('Camera', 'Professional DSLR camera', 899.99, Icons.camera_alt),
-  ];
+  bool _isTestingConnection = false;
+  String? _connectionStatus;
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  Future<void> _testApiConnection() async {
+    setState(() {
+      _isTestingConnection = true;
+      _connectionStatus = null;
+    });
+
+    try {
+      final apiService = ApiService();
+      apiService.init();
+
+      final isConnected = await apiService.testConnection();
+      setState(() {
+        _connectionStatus = isConnected
+            ? 'เชื่อมต่อสำเร็จ ✅'
+            : 'ไม่สามารถเชื่อมต่อได้ ❌';
+      });
+    } catch (e) {
+      setState(() {
+        _connectionStatus = 'เกิดข้อผิดพลาด: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isTestingConnection = false;
+      });
+    }
   }
 
   @override
@@ -64,11 +79,19 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchScreen()),
+              );
+            },
+          ),
           IconButton(icon: const Icon(Icons.shopping_cart), onPressed: () {}),
         ],
       ),
-      body: _selectedIndex == 0 ? _buildProductGrid() : _buildProfilePage(),
+      body: _selectedIndex == 0 ? _buildApiInfo() : _buildProfilePage(),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
@@ -81,84 +104,207 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget _buildProductGrid() {
+  Widget _buildApiInfo() {
+    final baseUrl = GlobalConfig.apiBaseUrl;
+    final endpoints = [
+      'PostgreSQL Select: $baseUrl${GlobalConfig.pgSelectEndpoint}',
+      'PostgreSQL Command: $baseUrl${GlobalConfig.pgCommandEndpoint}',
+      'ClickHouse Command: $baseUrl${GlobalConfig.clickHouseCommandEndpoint}',
+      'Product Search: $baseUrl${GlobalConfig.searchEndpoint}',
+    ];
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.8,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-        ),
-        itemCount: _products.length,
-        itemBuilder: (context, index) {
-          final product = _products[index];
-          return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'API Configuration',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+
+          Card(
             elevation: 4,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Container(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Base URL',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
                     width: double.infinity,
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Text(
+                      baseUrl,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: Icon(
-                      product.icon,
-                      size: 60,
-                      color: Colors.grey[600],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    kDebugMode ? 'Debug Mode' : 'Release Mode',
+                    style: TextStyle(
+                      color: kDebugMode ? Colors.orange : Colors.green,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          product.description,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const Spacer(),
-                        Text(
-                          '\$${product.price.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          );
-        },
+          ),
+
+          const SizedBox(height: 16),
+
+          // Connection Test Section
+          Card(
+            color: Colors.green[50],
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.network_check, color: Colors.green),
+                      const SizedBox(width: 8),
+                      Text(
+                        'ทดสอบการเชื่อมต่อ',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[800],
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (_connectionStatus != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        _connectionStatus!,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: _connectionStatus!.contains('✅')
+                              ? Colors.green[700]
+                              : Colors.red[700],
+                        ),
+                      ),
+                    ),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isTestingConnection
+                          ? null
+                          : _testApiConnection,
+                      icon: _isTestingConnection
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.wifi_protected_setup),
+                      label: Text(
+                        _isTestingConnection
+                            ? 'กำลังทดสอบ...'
+                            : 'ทดสอบเชื่อมต่อ API',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Text(
+            'Available Endpoints',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+
+          Expanded(
+            child: ListView.builder(
+              itemCount: endpoints.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue,
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      endpoints[index].split(': ')[0],
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      endpoints[index].split(': ')[1],
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.api, color: Colors.blue),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          Card(
+            color: Colors.blue[50],
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.info, color: Colors.blue),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'กดปุ่ม 🔍 เพื่อทดสอบ Product Search API',
+                      style: TextStyle(
+                        color: Colors.blue[800],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -183,13 +329,4 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
-}
-
-class Product {
-  final String name;
-  final String description;
-  final double price;
-  final IconData icon;
-
-  Product(this.name, this.description, this.price, this.icon);
 }

@@ -10,7 +10,7 @@
 				"-d",
 				"web-server",
 				"--web-port",
-				"8080"
+				"3001"
 			],
 			"group": "build",
 			"isBackground": true,
