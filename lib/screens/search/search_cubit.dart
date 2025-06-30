@@ -13,7 +13,6 @@ class SearchState {
   final int currentOffset;
   final String currentQuery;
   final int totalCount;
-  final bool useAI;
 
   const SearchState({
     this.isLoading = false,
@@ -24,7 +23,6 @@ class SearchState {
     this.currentOffset = 0,
     this.currentQuery = '',
     this.totalCount = 0,
-    this.useAI = false,
   });
 
   SearchState copyWith({
@@ -36,7 +34,6 @@ class SearchState {
     int? currentOffset,
     String? currentQuery,
     int? totalCount,
-    bool? useAI,
   }) {
     return SearchState(
       isLoading: isLoading ?? this.isLoading,
@@ -47,15 +44,17 @@ class SearchState {
       currentOffset: currentOffset ?? this.currentOffset,
       currentQuery: currentQuery ?? this.currentQuery,
       totalCount: totalCount ?? this.totalCount,
-      useAI: useAI ?? this.useAI,
     );
   }
 }
 
 class SearchCubit extends Cubit<SearchState> {
   final ApiService _apiService;
+  bool _useAI = false;
 
   SearchCubit(this._apiService) : super(const SearchState());
+
+  bool get useAI => _useAI;
 
   Future<void> searchProducts(String query, {bool? useAI}) async {
     if (query.trim().isEmpty) {
@@ -63,7 +62,7 @@ class SearchCubit extends Cubit<SearchState> {
       return;
     }
 
-    final aiEnabled = useAI ?? state.useAI;
+    final aiEnabled = useAI ?? _useAI;
 
     emit(
       state.copyWith(
@@ -71,7 +70,6 @@ class SearchCubit extends Cubit<SearchState> {
         error: null,
         currentQuery: query,
         currentOffset: 0,
-        useAI: aiEnabled,
       ),
     );
 
@@ -121,7 +119,7 @@ class SearchCubit extends Cubit<SearchState> {
         query: state.currentQuery,
         offset: nextOffset,
         limit: GlobalConfig.defaultPageSize,
-        useAI: state.useAI,
+        useAI: _useAI,
       );
 
       final newProducts = response.data?.data ?? [];
@@ -149,10 +147,9 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   void toggleAI() {
+    _useAI = !_useAI;
     if (state.currentQuery.isNotEmpty) {
-      searchProducts(state.currentQuery, useAI: !state.useAI);
-    } else {
-      emit(state.copyWith(useAI: !state.useAI));
+      searchProducts(state.currentQuery, useAI: _useAI);
     }
   }
 }

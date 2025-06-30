@@ -116,12 +116,13 @@ class _SearchViewState extends State<SearchView> {
                       ),
                     BlocBuilder<SearchCubit, SearchState>(
                       builder: (context, state) {
+                        final searchCubit = context.read<SearchCubit>();
                         return Container(
                           margin: const EdgeInsets.only(right: 8),
                           child: Icon(
                             Icons.psychology,
                             size: 20,
-                            color: state.useAI ? Colors.blue : Colors.grey[400],
+                            color: searchCubit.useAI ? Colors.blue : Colors.grey[400],
                           ),
                         );
                       },
@@ -156,17 +157,20 @@ class _SearchViewState extends State<SearchView> {
           const SizedBox(width: 8),
           BlocBuilder<SearchCubit, SearchState>(
             builder: (context, state) {
+              final searchCubit = context.read<SearchCubit>();
               return IconButton(
                 onPressed: () {
                   context.read<SearchCubit>().toggleAI();
                 },
                 icon: Icon(
                   Icons.psychology,
-                  color: state.useAI ? Colors.blue : Colors.grey,
+                  color: searchCubit.useAI ? Colors.blue : Colors.grey,
                 ),
-                tooltip: state.useAI ? 'ปิด AI' : 'เปิด AI',
+                tooltip: searchCubit.useAI ? 'ปิด AI' : 'เปิด AI',
                 style: IconButton.styleFrom(
-                  backgroundColor: state.useAI ? Colors.blue.withValues(alpha: 0.1) : null,
+                  backgroundColor: searchCubit.useAI
+                      ? Colors.blue.withValues(alpha: 0.1)
+                      : null,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -249,8 +253,9 @@ class _SearchViewState extends State<SearchView> {
   Widget _buildAIStatusIndicator() {
     return BlocBuilder<SearchCubit, SearchState>(
       builder: (context, state) {
-        if (!state.useAI) return const SizedBox.shrink();
-        
+        final searchCubit = context.read<SearchCubit>();
+        if (!searchCubit.useAI) return const SizedBox.shrink();
+
         return Container(
           margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
