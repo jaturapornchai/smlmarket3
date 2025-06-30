@@ -102,16 +102,32 @@ class _SearchViewState extends State<SearchView> {
               decoration: InputDecoration(
                 hintText: 'ค้นหาสินค้า...',
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
                           });
                         },
-                      )
-                    : null,
+                      ),
+                    BlocBuilder<SearchCubit, SearchState>(
+                      builder: (context, state) {
+                        return Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          child: Icon(
+                            Icons.psychology,
+                            size: 20,
+                            color: state.useAI ? Colors.blue : Colors.grey[400],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -136,6 +152,27 @@ class _SearchViewState extends State<SearchView> {
               ),
             ),
             child: const Text('ค้นหา'),
+          ),
+          const SizedBox(width: 8),
+          BlocBuilder<SearchCubit, SearchState>(
+            builder: (context, state) {
+              return IconButton(
+                onPressed: () {
+                  context.read<SearchCubit>().toggleAI();
+                },
+                icon: Icon(
+                  Icons.psychology,
+                  color: state.useAI ? Colors.blue : Colors.grey,
+                ),
+                tooltip: state.useAI ? 'ปิด AI' : 'เปิด AI',
+                style: IconButton.styleFrom(
+                  backgroundColor: state.useAI ? Colors.blue.withValues(alpha: 0.1) : null,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 8),
           PopupMenuButton<String>(
@@ -209,6 +246,39 @@ class _SearchViewState extends State<SearchView> {
     }
   }
 
+  Widget _buildAIStatusIndicator() {
+    return BlocBuilder<SearchCubit, SearchState>(
+      builder: (context, state) {
+        if (!state.useAI) return const SizedBox.shrink();
+        
+        return Container(
+          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.blue.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.psychology, size: 16, color: Colors.blue[700]),
+              const SizedBox(width: 6),
+              Text(
+                'ค้นหาด้วย AI',
+                style: TextStyle(
+                  color: Colors.blue[700],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,6 +309,7 @@ class _SearchViewState extends State<SearchView> {
       body: Column(
         children: [
           _buildSearchBar(),
+          _buildAIStatusIndicator(),
 
           Expanded(
             child: BlocBuilder<SearchCubit, SearchState>(
