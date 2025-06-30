@@ -13,7 +13,6 @@ class SearchState {
   final int currentOffset;
   final String currentQuery;
   final int totalCount;
-  final bool useAI;
 
   const SearchState({
     this.isLoading = false,
@@ -24,7 +23,6 @@ class SearchState {
     this.currentOffset = 0,
     this.currentQuery = '',
     this.totalCount = 0,
-    this.useAI = false,
   });
 
   SearchState copyWith({
@@ -36,7 +34,6 @@ class SearchState {
     int? currentOffset,
     String? currentQuery,
     int? totalCount,
-    bool? useAI,
   }) {
     return SearchState(
       isLoading: isLoading ?? this.isLoading,
@@ -47,7 +44,6 @@ class SearchState {
       currentOffset: currentOffset ?? this.currentOffset,
       currentQuery: currentQuery ?? this.currentQuery,
       totalCount: totalCount ?? this.totalCount,
-      useAI: useAI ?? this.useAI,
     );
   }
 }
@@ -57,7 +53,7 @@ class SearchCubit extends Cubit<SearchState> {
 
   SearchCubit(this._apiService) : super(const SearchState());
 
-  Future<void> searchProducts(String query, {bool useAI = false}) async {
+  Future<void> searchProducts(String query) async {
     if (query.trim().isEmpty) {
       emit(const SearchState());
       return;
@@ -69,7 +65,6 @@ class SearchCubit extends Cubit<SearchState> {
         error: null,
         currentQuery: query,
         currentOffset: 0,
-        useAI: useAI,
       ),
     );
 
@@ -78,7 +73,6 @@ class SearchCubit extends Cubit<SearchState> {
         query: query,
         offset: 0,
         limit: GlobalConfig.defaultPageSize,
-        useAI: useAI,
       );
 
       final products = response.data?.data ?? [];
@@ -119,7 +113,6 @@ class SearchCubit extends Cubit<SearchState> {
         query: state.currentQuery,
         offset: nextOffset,
         limit: GlobalConfig.defaultPageSize,
-        useAI: state.useAI,
       );
 
       final newProducts = response.data?.data ?? [];
@@ -144,11 +137,5 @@ class SearchCubit extends Cubit<SearchState> {
 
   void clearSearch() {
     emit(const SearchState());
-  }
-
-  void toggleAI() {
-    if (state.currentQuery.isNotEmpty) {
-      searchProducts(state.currentQuery, useAI: !state.useAI);
-    }
   }
 }

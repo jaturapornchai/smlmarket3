@@ -71,21 +71,19 @@ class ApiService {
     required String query,
     int offset = 0,
     int limit = 20,
-    bool useAI = false,
   }) async {
     try {
       if (kDebugMode) {
         print(
-          '[API] Searching for: "$query", offset: $offset, limit: $limit, AI: $useAI',
+          '[API] Vector searching for: "$query", offset: $offset, limit: $limit',
         );
       }
 
-      final requestData = {'query': query, 'limit': limit, 'offset': offset};
-
-      // เพิ่ม AI parameter ถ้าต้องการ
-      if (useAI) {
-        requestData['ai'] = 1;
-      }
+      final requestData = {
+        'query': query,
+        'limit': limit,
+        'offset': offset,
+      };
 
       final response = await _dio.post(
         GlobalConfig.searchEndpoint,

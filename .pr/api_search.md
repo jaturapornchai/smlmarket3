@@ -1,308 +1,75 @@
-# SMLGOAPI - POST Method Documentation
+# Vector Search API Documentation
 
-## 🔍 Product Search API
+## 🤖 **POST /v1/search-by-vector**
 
-### **POST /v1/search**
-Search for auto parts with AI-powered multi-language support
+Search products using Weaviate vector database first, then retrieve detailed information from PostgreSQL.
 
-#### Request
-```json
-POST /v1/search
-Content-Type: application/json
-
-{
-  "query": "string (required)",
-  "ai": "integer (optional, default: 0)",
-  "limit": "integer (optional, default: 10, max: 100)",
-  "offset": "integer (optional, default: 0)"
-}
+### 📋 **Endpoint Information**
 ```
-
-#### Parameters
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `query` | string | ✅ Yes | - | Search query (Thai/English) |
-| `ai` | integer | ❌ No | 0 | 0=No AI, 1=Use AI translation |
-| `limit` | integer | ❌ No | 10 | Max results (1-100) |
-| `offset` | integer | ❌ No | 0 | Pagination offset |
-
-#### Examples
-
-**Basic Search**
-```bash
-curl -X POST "http://localhost:8008/v1/search" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "toyota"
-  }'
-```
-
-**AI-Enhanced Search (Thai)**
-```bash
-curl -X POST "http://localhost:8008/v1/search" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "เบรค",
-    "ai": 1,
-    "limit": 20
-  }'
-```
-
-**Pagination**
-```bash
-curl -X POST "http://localhost:8008/v1/search" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "brake pad",
-    "limit": 10,
-    "offset": 20
-  }'
-```
-
-#### Response
-```json
-{
-  "success": true,
-  "message": "Search completed successfully",
-  "data": {
-    "data": [
-      {
-        "id": "TOYOTA-001",
-        "code": "TOYOTA-001",
-        "name": "แผง TOYOTA VIGO (แท้)",
-        "similarity_score": 5,
-        "balance_qty": 0,
-        "price": 2600,
-        "unit": "แผ่น",
-        "search_priority": 5,
-        "sale_price": 2600,
-        "premium_word": "",
-        "discount_price": 2350,
-        "discount_percent": 0,
-        "final_price": 2600,
-        "sold_qty": 0,
-        "multi_packing": 0,
-        "multi_packing_name": "",
-        "barcodes": "",
-        "qty_available": -1
-      }
-    ],
-    "total_count": 2182,
-    "query": "toyota",
-    "duration": 731.5
-  }
-}
-```
-
-## 🤖 Vector Search API
-
-### **POST /v1/search-by-vector**
-Search using vector database (Weaviate) then PostgreSQL
-
-#### Request
-```json
 POST /v1/search-by-vector
 Content-Type: application/json
+```
 
+### 📝 **Request Body Format**
+```json
 {
-  "query": "string (required)",
-  "limit": "integer (optional, default: 20, max: 100)",
-  "offset": "integer (optional, default: 0)"
+  "query": "string (required) - คำค้นหา",
+  "limit": "integer (optional) - จำนวนผลลัพธ์ (default: 20, max: 100)",
+  "offset": "integer (optional) - ตำแหน่งเริ่มต้น (default: 0)"
 }
 ```
 
-#### Example
+### 🎯 **How It Works**
+
+1. **Vector Search** - ค้นหาใน Weaviate vector database เพื่อหา IC codes และ barcodes
+2. **PostgreSQL Lookup** - ใช้ IC codes/barcodes ที่ได้ไปดึงข้อมูลสินค้าจาก PostgreSQL
+3. **Data Enhancement** - เพิ่มข้อมูลราคาและยอดคงเหลือจาก `ic_inventory_price_formula` และ `ic_balance`
+
+### 💻 **Examples**
+
+#### **Basic Vector Search**
 ```bash
 curl -X POST "http://localhost:8008/v1/search-by-vector" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "brake toyota",
-    "limit": 10
+    "query": "brake pad toyota"
   }'
 ```
 
-## 🐘 PostgreSQL Database Operations
-
-### **POST /v1/pgcommand**
-Execute PostgreSQL commands (CREATE, INSERT, UPDATE, DELETE)
-
-#### Request
-```json
-POST /v1/pgcommand
-Content-Type: application/json
-
-{
-  "query": "string (required) - SQL command"
-}
-```
-
-#### Examples
+#### **Vector Search with Limit**
 ```bash
-# Create table
-curl -X POST "http://localhost:8008/v1/pgcommand" \
+curl -X POST "http://localhost:8008/v1/search-by-vector" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "CREATE TABLE products (id SERIAL PRIMARY KEY, name VARCHAR(255))"
+    "query": "เบรคผ้า",
+    "limit": 30
   }'
+```
 
-# Insert data
-curl -X POST "http://localhost:8008/v1/pgcommand" \
+#### **Vector Search with Pagination**
+```bash
+curl -X POST "http://localhost:8008/v1/search-by-vector" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "INSERT INTO products (name) VALUES ('"'Brake Pad'"')"
+    "query": "compressor",
+    "limit": 20,
+    "offset": 40
   }'
 ```
 
-### **POST /v1/pgselect**
-Execute PostgreSQL SELECT queries
-
-#### Request
-```json
-POST /v1/pgselect
-Content-Type: application/json
-
-{
-  "query": "string (required) - SELECT query"
-}
-```
-
-#### Example
-```bash
-curl -X POST "http://localhost:8008/v1/pgselect" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "SELECT * FROM ic_inventory WHERE name ILIKE '"'%toyota%'"' LIMIT 10"
-  }'
-```
-
-## 🇹🇭 Thai Administrative Data
-
-### **POST /v1/provinces**
-Get all Thai provinces
-
-#### Request
-```json
-POST /v1/provinces
-Content-Type: application/json
-
-{}
-```
-
-#### Example
-```bash
-curl -X POST "http://localhost:8008/v1/provinces" \
-  -H "Content-Type: application/json" \
-  -d '{}'
-```
-
-#### Response
-```json
-{
-  "success": true,
-  "message": "Retrieved 77 provinces successfully",
-  "data": [
-    {
-      "id": 1,
-      "name_th": "กรุงเทพมหานคร",
-      "name_en": "Bangkok"
-    }
-  ]
-}
-```
-
-### **POST /v1/amphures**
-Get districts in a province
-
-#### Request
-```json
-POST /v1/amphures
-Content-Type: application/json
-
-{
-  "province_id": "integer (required)"
-}
-```
-
-#### Example
-```bash
-curl -X POST "http://localhost:8008/v1/amphures" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "province_id": 1
-  }'
-```
-
-### **POST /v1/tambons**
-Get sub-districts in an amphure
-
-#### Request
-```json
-POST /v1/tambons
-Content-Type: application/json
-
-{
-  "amphure_id": "integer (required)",
-  "province_id": "integer (required)"
-}
-```
-
-#### Example
-```bash
-curl -X POST "http://localhost:8008/v1/tambons" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "amphure_id": 1001,
-    "province_id": 1
-  }'
-```
-
-### **POST /v1/findbyzipcode**
-Find location by zip code
-
-#### Request
-```json
-POST /v1/findbyzipcode
-Content-Type: application/json
-
-{
-  "zip_code": "integer (required)"
-}
-```
-
-#### Example
-```bash
-curl -X POST "http://localhost:8008/v1/findbyzipcode" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "zip_code": 10200
-  }'
-```
-
-## 🤖 AI Enhancement Features
-
-### How AI Enhancement Works (ai=1)
-
-| Original Query | AI Enhanced Result | Description |
-|----------------|-------------------|-------------|
-| `เบรค` | `เบรค brake brakes ระบบเบรค brake pad` | Thai to English + related terms |
-| `break` | `brake เบรค brakes` | Typo correction |
-| `toyoda` | `toyota โตโยต้า TOYOTA` | Brand name correction |
-| `คอมเพรสเซอร์` | `คอมเพรสเซอร์ compressor คอมแอร์` | Technical term expansion |
-
-### JavaScript Example
+### 🔧 **JavaScript Example**
 
 ```javascript
-// Search with AI enhancement
-async function searchProducts(query, useAI = true) {
-  const response = await fetch('/v1/search', {
+async function vectorSearch(query, limit = 20, offset = 0) {
+  const response = await fetch('/v1/search-by-vector', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       query: query,
-      ai: useAI ? 1 : 0,
-      limit: 20
+      limit: limit,
+      offset: offset
     })
   });
   
@@ -310,84 +77,230 @@ async function searchProducts(query, useAI = true) {
 }
 
 // Usage
-searchProducts('เบรค', true)
+vectorSearch('brake toyota')
   .then(data => {
-    console.log(`Found ${data.data.total_count} products`);
-    data.data.data.forEach(product => {
-      console.log(`[${product.code}] ${product.name} - ฿${product.final_price}`);
-    });
-  });
+    if (data.success) {
+      console.log(`Found ${data.data.total_count} products`);
+      data.data.data.forEach(product => {
+        console.log(`[${product.code}] ${product.name}`);
+        console.log(`  Price: ฿${product.final_price}`);
+        console.log(`  Available: ${product.qty_available} ${product.unit}`);
+      });
+    }
+  })
+  .catch(error => console.error('Search failed:', error));
 ```
 
-### Python Example
+### 🐍 **Python Example**
 
 ```python
 import requests
 import json
 
-def search_products(query, use_ai=True, limit=20):
-    url = 'http://localhost:8008/v1/search'
+def vector_search(query, limit=20, offset=0):
+    """
+    Search products using vector similarity
+    """
+    url = 'http://localhost:8008/v1/search-by-vector'
     headers = {'Content-Type': 'application/json'}
     
     payload = {
         'query': query,
-        'ai': 1 if use_ai else 0,
-        'limit': limit
+        'limit': limit,
+        'offset': offset
     }
     
     response = requests.post(url, headers=headers, data=json.dumps(payload))
     return response.json()
 
-# Usage
-result = search_products('โตโยต้า เบรค', use_ai=True)
-if result['success']:
-    print(f"Found {result['data']['total_count']} products")
-    for product in result['data']['data']:
-        print(f"[{product['code']}] {product['name']} - ฿{product['final_price']}")
+# Example usage
+if __name__ == "__main__":
+    # Search for brake pads
+    result = vector_search('brake pad', limit=10)
+    
+    if result['success']:
+        print(f"Found {result['data']['total_count']} products")
+        
+        for product in result['data']['data']:
+            print(f"\n[{product['code']}] {product['name']}")
+            print(f"  Unit: {product['unit']}")
+            print(f"  Price: ฿{product['final_price']:,.2f}")
+            print(f"  Stock: {product['qty_available']} units")
+            print(f"  Similarity: {product['similarity_score']}")
 ```
 
-## 📊 Response Field Descriptions
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `code` | string | Product code/SKU |
-| `name` | string | Product name |
-| `unit` | string | Unit of measure |
-| `price` | number | Base price |
-| `sale_price` | number | Selling price |
-| `final_price` | number | Final price after discount |
-| `discount_price` | number | Discount amount |
-| `discount_percent` | number | Discount percentage |
-| `qty_available` | number | Available quantity |
-| `sold_qty` | number | Quantity sold |
-| `multi_packing` | integer | 0=Single unit, 1=Multiple units |
-| `multi_packing_name` | string | Multiple units (comma separated) |
-| `barcodes` | string | Barcodes (comma separated) |
-| `search_priority` | integer | Relevance score (1-5) |
-
-## ⚡ Performance Tips
-
-1. **Use AI wisely** - Only enable `ai=1` when needed for cross-language search
-2. **Limit results** - Use appropriate `limit` values (10-20 for UI)
-3. **Implement pagination** - Use `offset` for large result sets
-4. **Cache results** - Cache frequently searched queries on frontend
-5. **Monitor duration** - Check `duration` field for performance
-
-## 🔧 Error Handling
+### 📊 **Response Format**
 
 ```json
 {
-  "success": false,
-  "error": "Error message",
-  "details": {
-    "error_type": "database_error",
-    "timestamp": "2025-06-19T15:30:45+07:00"
+  "success": true,
+  "message": "Search completed successfully",
+  "data": {
+    "data": [
+      {
+        "id": "BRAKE-001",
+        "code": "BRAKE-001",
+        "name": "ผ้าเบรคหน้า TOYOTA VIGO",
+        "similarity_score": 0.95,
+        "balance_qty": 0,
+        "price": 850,
+        "supplier_code": "SUP001",
+        "unit": "ชุด",
+        "img_url": "",
+        "search_priority": 5,
+        "sale_price": 850,
+        "premium_word": "",
+        "discount_price": 800,
+        "discount_percent": 5.88,
+        "final_price": 850,
+        "sold_qty": 150,
+        "multi_packing": 0,
+        "multi_packing_name": "",
+        "barcodes": "8850001234567",
+        "qty_available": 45
+      }
+    ],
+    "total_count": 156,
+    "query": "brake pad toyota",
+    "duration": 450.3
   }
 }
 ```
 
-Common errors:
-- `Query parameter is required` - Missing search query
-- `Invalid JSON format` - Malformed request body
-- `Database connection failed` - PostgreSQL unavailable
-- `Vector search service not available` - Weaviate offline
+### 🔍 **Vector Search vs Regular Search**
+
+| Feature | Vector Search | Regular Search |
+|---------|--------------|----------------|
+| **Method** | Semantic similarity | Text matching |
+| **Database** | Weaviate → PostgreSQL | PostgreSQL only |
+| **Accuracy** | High for similar concepts | Exact matches |
+| **Speed** | Moderate | Fast |
+| **Use Case** | Find similar products | Find specific items |
+
+### ⚡ **Performance Characteristics**
+
+- **Vector Search Time**: ~200-400ms (Weaviate)
+- **PostgreSQL Lookup**: ~100-300ms
+- **Total Response Time**: ~300-700ms
+- **Optimal Limit**: 20-50 results
+
+### 🎯 **Best Use Cases**
+
+1. **Product Recommendations** - ค้นหาสินค้าที่คล้ายกัน
+2. **Fuzzy Search** - ค้นหาแม้พิมพ์ผิดเล็กน้อย
+3. **Concept Search** - ค้นหาด้วยแนวคิด เช่น "ของแต่งรถ"
+4. **Multi-language** - ค้นหาข้ามภาษาได้ดี
+5. **Similar Items** - หาสินค้าทดแทน
+
+### ❌ **Error Responses**
+
+#### Missing Query
+```json
+{
+  "success": false,
+  "message": "Query parameter is required"
+}
+```
+
+#### Vector Service Unavailable
+```json
+{
+  "success": false,
+  "error": "Vector search service not available"
+}
+```
+
+#### No Results Found
+```json
+{
+  "success": true,
+  "message": "No products found matching your search",
+  "data": {
+    "data": [],
+    "total_count": 0,
+    "query": "xyz123"
+  }
+}
+```
+
+### 🔧 **Implementation Notes**
+
+1. **Vector Database**: ใช้ Weaviate สำหรับ semantic search
+2. **Fallback**: ถ้าไม่พบ IC code จะใช้ barcode แทน
+3. **Enrichment**: เพิ่มข้อมูลราคาและสต็อกแบบ real-time
+4. **Caching**: ไม่มี cache ที่ API level (ควร cache ที่ frontend)
+5. **Limit**: Maximum 100 items per request
+
+### 💡 **Tips for Better Results**
+
+1. **Use descriptive queries** - "ผ้าเบรคหน้า toyota" ดีกว่า "เบรค"
+2. **Combine terms** - "brake pad front" หาได้แม่นยำกว่า
+3. **Check similarity score** - คะแนน > 0.8 = ตรงมาก
+4. **Use pagination** - สำหรับผลลัพธ์จำนวนมาก
+5. **Monitor duration** - ถ้าช้ากว่า 1 วินาที ควรลด limit
+
+### 🚀 **Advanced Usage**
+
+```javascript
+// Advanced search with error handling and retry
+async function advancedVectorSearch(query, options = {}) {
+  const config = {
+    limit: options.limit || 20,
+    offset: options.offset || 0,
+    retries: options.retries || 3,
+    timeout: options.timeout || 5000
+  };
+  
+  let lastError;
+  
+  for (let i = 0; i < config.retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+      
+      const response = await fetch('/v1/search-by-vector', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query: query,
+          limit: config.limit,
+          offset: config.offset
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Search failed');
+      }
+      
+      return data;
+      
+    } catch (error) {
+      lastError = error;
+      
+      if (error.name === 'AbortError') {
+        console.warn(`Attempt ${i + 1} timed out, retrying...`);
+      } else {
+        console.error(`Attempt ${i + 1} failed:`, error.message);
+      }
+      
+      // Wait before retry
+      if (i < config.retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+```

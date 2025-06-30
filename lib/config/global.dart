@@ -10,7 +10,7 @@ class GlobalConfig {
   }
 
   // API endpoints
-  static const String searchEndpoint = 'search';
+  static const String searchEndpoint = 'search-by-vector';
   static const String pgSelectEndpoint = 'pgselect';
   static const String pgCommandEndpoint = 'pgcommand';
   static const String clickHouseCommandEndpoint = 'command';
